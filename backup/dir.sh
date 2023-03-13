@@ -12,7 +12,7 @@ ARCHIVE_NAME="thetiptop-server-$(date +"%Y%m%d%H%M%S").tar.gz"
 tar -czf "/tmp/$ARCHIVE_NAME" "$DIR_NAME"
 
 # Use rclone to upload the archive to Google Drive
-rclone copy "$ARCHIVE_NAME" remote:server-backups
+rclone copy "$ARCHIVE_NAME" googledrive:server-backups
 
 # Start the Docker container again
 
