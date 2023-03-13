@@ -18,3 +18,4 @@ rclone copy "$ARCHIVE_NAME" googledrive:server-backups
 
 # Delete the archive
 rm "$ARCHIVE_NAME"
+
