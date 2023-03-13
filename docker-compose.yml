@@ -1,0 +1,232 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:2.7.0
+    container_name: traefik
+    command:
+      - --api.insecure=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --metrics
+      - --metrics.prometheus=true
+      - --metrics.prometheus.buckets=0.1,0.3,1.2,5.0
+      - --certificatesresolvers.letsencrypt.acme.email=ElMahdiBENBRAHIM@etu-digitalschool.paris
+      - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entryPoint.permanent=true
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt/acme.json:/etc/traefik/acme/acme.json
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik-http.entrypoints=web
+      - traefik.http.routers.traefik-http.rule=Host(`traefik.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.traefik-http.service=api@internal
+      - traefik.http.routers.traefik.entrypoints=websecure
+      - traefik.http.routers.traefik.rule=Host(`traefik.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=letsencrypt
+      - traefik.http.routers.traefik.service=api@internal
+    
+  jenkins:
+    build: ./jenkins
+    container_name: jenkins
+    user: root
+    restart: always
+    volumes:
+      - ./data/jenkins:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.ssh:/root/.ssh
+      - /usr/libexec/docker:/usr/libexec/docker
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jenkins.rule=Host(`jenkins.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.jenkins.entrypoints=websecure
+      - traefik.http.routers.jenkins.tls=true
+      - traefik.http.routers.jenkins.tls.certresolver=letsencrypt
+      - traefik.http.services.jenkins.loadbalancer.server.port=8080
+
+  gitea-db:
+    image: postgres:14
+    container_name: gitea-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=gitea
+      - POSTGRES_DB=gitea
+    volumes:
+      - gitea-db:/var/lib/postgres/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.gitea-db.rule=Host(`gitea-db.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.services.gitea-db.loadbalancer.server.port=5432
+  
+  gitea:
+    image: gitea/gitea:1.18.5
+    container_name: gitea
+    ports:
+      - "2222:2222"
+    volumes:
+      - ./data/gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=gitea-db
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=gitea
+      - DB_TYPE=postgres
+      - DB_HOST=gitea-db
+      - DB_NAME=gitea
+      - DB_USER=gitea
+      - DB_PASSWD=gitea
+      - DOMAIN=dsp-archiwebf22-eb-we-fh.fr
+      - ROOT_URL=https://gitea.dsp-archiwebf22-eb-we-fh.fr
+      - DISABLE_SSH=false
+      - DISABLE_ROUTER_LOG=false
+      - DISABLE_REGISTRATION=false
+      - DISABLE_WEBHOOKS=false
+      - ALLOWED_HOST_LIST=*
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.gitea.rule=Host(`gitea.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.gitea.entrypoints=websecure
+      - traefik.http.routers.gitea.tls=true
+      - traefik.http.routers.gitea.tls.certresolver=letsencrypt
+      - traefik.http.services.gitea.loadbalancer.server.port=3000
+    depends_on:
+      - traefik
+      - gitea-db
+
+  portainer:
+    image: portainer/portainer-ce:2.9.3
+    container_name: portainer
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data/portainer:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=Host(`portainer.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.portainer.entrypoints=websecure
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.routers.portainer.tls.certresolver=letsencrypt
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+  
+  sonarqube:
+    image: sonarqube:lts-community
+    container_name: sonarqube
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - sonar.jdbc.username=sonar
+      - sonar.jdbc.password=sonar
+      - sonar.jdbc.url=jdbc:postgresql://sonarqube-db:5433/sonar
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.sonarqube.entrypoints=websecure
+      - traefik.http.routers.sonarqube.tls=true
+      - traefik.http.routers.sonarqube.tls.certresolver=letsencrypt
+      - traefik.http.services.sonarqube.loadbalancer.server.port=9000
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+    - sonarqube-db
+  
+  sonarqube-db:
+    image: postgres:14
+    container_name: sonarqube-db
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - ./data/sonarqube-db:/var/lib/postgres/data
+      - /var/run/postgresql:/var/run/postgresql
+    labels:
+      - traefik.enable=false
+  
+  grafana:
+    image: grafana/grafana:8.3.2
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    user: "472"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.rule=Host(`grafana.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.grafana.entrypoints=websecure
+      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.tls.certresolver=letsencrypt
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.enable-lifecycle'
+      - 'storage.tsdb.retention.time=15d'
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    expose:
+      - 9100
+ 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.prometheus.rule=Host(`prometheus.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.prometheus.entrypoints=websecure
+      - traefik.http.routers.prometheus.tls=true
+      - traefik.http.routers.prometheus.tls.certresolver=letsencrypt
+      - traefik.http.services.prometheus.loadbalancer.server.port=9090
+    expose:
+      - 9090
+
+volumes:
+  gitea-db:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
