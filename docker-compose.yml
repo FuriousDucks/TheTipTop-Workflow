@@ -234,5 +234,5 @@ volumes:
   sonarqube_logs:
 
 networks:
-  default:
+  dev:
     external: true
