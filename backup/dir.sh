@@ -8,8 +8,8 @@ DIR_NAME="/var/www/"
 # Set the name of the archive file
 ARCHIVE_NAME="thetiptop-server-$(date +"%Y%m%d%H%M%S").tar.gz"
 
-# Create the archive
-tar -czf "$ARCHIVE_NAME" "$DIR_NAME"
+# Create the archive inside the tmp directory
+tar -czf "/tmp/$ARCHIVE_NAME" "$DIR_NAME"
 
 # Use rclone to upload the archive to Google Drive
 rclone copy "$ARCHIVE_NAME" remote:server-backups
