@@ -6,10 +6,10 @@ DIR_NAME="/var/www/"
 # Stop the Docker container before starting the backup
 
 # Set the name of the archive file
-ARCHIVE_NAME="thetiptop-server-$(date +"%Y%m%d%H%M%S").tar.gz"
+ARCHIVE_NAME="/tmp/thetiptop-server-$(date +"%Y%m%d%H%M%S").tar.gz"
 
 # Create the archive inside the tmp directory
-tar -czf "/tmp/$ARCHIVE_NAME" "$DIR_NAME"
+tar -czf "$ARCHIVE_NAME" "$DIR_NAME"
 
 # Use rclone to upload the archive to Google Drive
 rclone copy "$ARCHIVE_NAME" googledrive:server-backups
