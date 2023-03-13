@@ -39,8 +39,6 @@ services:
       - traefik.http.routers.traefik.tls=true
       - traefik.http.routers.traefik.tls.certresolver=letsencrypt
       - traefik.http.routers.traefik.service=api@internal
-    networks:
-      - dev
     
   jenkins:
     build: ./jenkins
@@ -232,7 +230,3 @@ volumes:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
-
-networks:
-  dev:
-    external: true
