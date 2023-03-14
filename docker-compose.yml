@@ -39,6 +39,8 @@ services:
       - traefik.http.routers.traefik.tls=true
       - traefik.http.routers.traefik.tls.certresolver=letsencrypt
       - traefik.http.routers.traefik.service=api@internal
+    networks:
+      - dev
     
   jenkins:
     build: ./jenkins
@@ -59,6 +61,8 @@ services:
       - traefik.http.routers.jenkins.tls=true
       - traefik.http.routers.jenkins.tls.certresolver=letsencrypt
       - traefik.http.services.jenkins.loadbalancer.server.port=8080
+    networks:
+      - dev
 
   gitea-db:
     image: postgres:14
@@ -75,6 +79,8 @@ services:
       - traefik.enable=true
       - traefik.http.routers.gitea-db.rule=Host(`gitea-db.dsp-archiwebf22-eb-we-fh.fr`)
       - traefik.http.services.gitea-db.loadbalancer.server.port=5432
+    networks:
+      - gitea-db
   
   gitea:
     image: gitea/gitea:1.18.5
@@ -115,6 +121,9 @@ services:
     depends_on:
       - traefik
       - gitea-db
+    networks:
+      - dev
+      - gitea-db
 
   portainer:
     image: portainer/portainer-ce:2.9.3
@@ -130,6 +139,8 @@ services:
       - traefik.http.routers.portainer.tls=true
       - traefik.http.routers.portainer.tls.certresolver=letsencrypt
       - traefik.http.services.portainer.loadbalancer.server.port=9000
+    networks:
+      - dev
   
   sonarqube:
     image: sonarqube:lts-community
@@ -156,6 +167,9 @@ services:
       - sonarqube_logs:/opt/sonarqube/logs
     depends_on:
     - sonarqube-db
+    networks:
+      - dev
+      - sonarqube-db
   
   sonarqube-db:
     image: postgres:14
@@ -172,17 +186,20 @@ services:
       - /var/run/postgresql:/var/run/postgresql
     labels:
       - traefik.enable=false
+    networks:
+      - sonarqube-db
   
   grafana:
-    image: grafana/grafana:8.3.2
+    image: grafana/grafana-oss
     container_name: grafana
     restart: always
     ports:
       - "3000:3000"
     volumes:
+      - ./data/grafana:/var/lib/grafana
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
-    user: "472"
+    user: root
     labels:
       - traefik.enable=true
       - traefik.http.routers.grafana.rule=Host(`grafana.dsp-archiwebf22-eb-we-fh.fr`)
@@ -196,6 +213,8 @@ services:
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.enable-lifecycle'
       - 'storage.tsdb.retention.time=15d'
+    networks:
+      - dev
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -207,6 +226,8 @@ services:
       - /:/rootfs:ro
     expose:
       - 9100
+    networks:
+      - dev
  
   prometheus:
     image: prom/prometheus
@@ -224,9 +245,17 @@ services:
       - traefik.http.services.prometheus.loadbalancer.server.port=9090
     expose:
       - 9090
+    networks:
+      - dev
 
 volumes:
   gitea-db:
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
+
+networks:
+  dev:
+    name: "dev"
+  gitea-db:
+  sonarqube-db:
