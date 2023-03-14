@@ -149,10 +149,10 @@ services:
     ports:
       - "9000:9000"
     environment:
-      - sonar.jdbc.username=sonar
-      - sonar.jdbc.password=sonar
-      - sonar.jdbc.url=jdbc:postgresql://sonarqube-db:5432/sonar
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONAR_JDBC_URL=jdbc:postgresql://sonarqube-db:5432/sonar
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
     labels:
       - traefik.enable=true
       - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp-archiwebf22-eb-we-fh.fr`)
