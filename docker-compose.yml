@@ -143,7 +143,7 @@ services:
       - dev
   
   sonarqube:
-    image: sonarqube:lts-community
+    image: sonarqube
     container_name: sonarqube
     restart: always
     ports:
@@ -151,7 +151,7 @@ services:
     environment:
       - sonar.jdbc.username=sonar
       - sonar.jdbc.password=sonar
-      - sonar.jdbc.url=jdbc:postgresql://sonarqube-db:5433/sonar
+      - sonar.jdbc.url=jdbc:postgresql://sonarqube-db:5432/sonar
       - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     labels:
       - traefik.enable=true
@@ -175,8 +175,6 @@ services:
     image: postgres:14
     container_name: sonarqube-db
     restart: always
-    ports:
-      - "5433:5432"
     environment:
       - POSTGRES_USER=sonar
       - POSTGRES_PASSWORD=sonar
