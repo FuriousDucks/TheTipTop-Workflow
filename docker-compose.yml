@@ -143,7 +143,7 @@ services:
       - dev
   
   sonarqube:
-    image: sonarqube
+    image: sonarqube:lts-community
     container_name: sonarqube
     restart: always
     ports:
@@ -161,7 +161,6 @@ services:
       - traefik.http.routers.sonarqube.tls=true
       - traefik.http.routers.sonarqube.tls.certresolver=letsencrypt
       - traefik.http.services.sonarqube.loadbalancer.server.port=7000
-      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
