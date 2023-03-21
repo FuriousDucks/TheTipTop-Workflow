@@ -193,19 +193,21 @@ services:
     container_name: grafana
     restart: always
     ports:
-      - "3000:3000"
+      - "3003:3003"
     volumes:
       - ./data/grafana:/var/lib/grafana
       - /etc/localtime:/etc/localtime:ro
       - /etc/timezone:/etc/timezone:ro
     user: root
+    environment:
+      - GF_SERVER_HTTP_PORT=3003
     labels:
       - traefik.enable=true
       - traefik.http.routers.grafana.rule=Host(`grafana.dsp-archiwebf22-eb-we-fh.fr`)
       - traefik.http.routers.grafana.entrypoints=websecure
       - traefik.http.routers.grafana.tls=true
       - traefik.http.routers.grafana.tls.certresolver=letsencrypt
-      - traefik.http.services.grafana.loadbalancer.server.port=3000
+      - traefik.http.services.grafana.loadbalancer.server.port=3003
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --web.console.templates=/etc/prometheus/consoles
