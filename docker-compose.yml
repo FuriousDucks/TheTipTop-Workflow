@@ -5,12 +5,12 @@ services:
     image: traefik:2.7.0
     container_name: traefik
     command:
+      - --log.level=INFO
       - --api.insecure=true
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
       - --providers.docker
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=traefik
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
       - --metrics
       - --metrics.prometheus=true
       - --metrics.prometheus.buckets=0.1,0.3,1.2,5.0
@@ -23,8 +23,10 @@ services:
       - --entrypoints.web.http.redirections.entryPoint.permanent=true
       - --entrypoints.websecure.http.tls=true
       - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+      - --providers.docker.network=traefik
     ports:
       - "80:80"
+      - "8080:8080"
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -42,6 +44,24 @@ services:
     networks:
       - traefik
       - dev
+
+  whoami:
+    image: traefik/whoami:latest
+    container_name: whoami
+    depends_on:
+      - traefik
+    networks:
+      - dev
+    command:
+      - --port=8181
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.dsp-archiwebf22-eb-we-fh.fr`)
+      - traefik.http.routers.whoami.entrypoints=websecure
+      - traefik.http.routers.whoami.tls=true
+      - traefik.http.routers.whoami.tls.certresolver=letsencrypt
+      - traefik.http.services.whoami.loadbalancer.server.port=8181
+    restart: always
     
   jenkins:
     build: ./jenkins
