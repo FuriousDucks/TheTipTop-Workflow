@@ -20,13 +20,16 @@ services:
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.web.http.redirections.entryPoint.permanent=true
-      - --entrypoints.websecure.http.tls=true
-      - --entrypoints.websecure.http.tls.certresolver=letsencrypt
+      # - --entrypoints.web.http.redirections.entryPoint.permanent=true
+      # - --entrypoints.websecure.http.tls=true
+      # - --entrypoints.websecure.http.tls.certresolver=letsencrypt
       - --providers.docker.network=traefik
+
+      # - --entrypoints.web.http.redirections.entryPoint.permanent=true
+      # - --entrypoints.websecure.http.tls=true
+      # - --entrypoints.websecure.http.tls.certresolver=letsencrypt
     ports:
       - "80:80"
-      - "8080:8080"
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -120,6 +123,7 @@ services:
       - GITEA__database__USER=gitea
       - GITEA__database__PASSWD=gitea
       - GITEA__server__HTTP_PORT=3001
+      - GITEA__server__ROOT_URL=https://gitea.dsp-archiwebf22-eb-we-fh.fr
       - DB_TYPE=postgres
       - DB_HOST=gitea-db
       - DB_NAME=gitea
@@ -140,7 +144,6 @@ services:
       - traefik.http.routers.gitea.tls.certresolver=letsencrypt
       - traefik.http.services.gitea.loadbalancer.server.port=3001
     depends_on:
-      - traefik
       - gitea-db
     networks:
       - dev
