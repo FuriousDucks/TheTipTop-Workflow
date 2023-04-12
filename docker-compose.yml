@@ -46,7 +46,6 @@ services:
       - traefik.http.routers.traefik.service=api@internal
     networks:
       - traefik
-      - dev
 
   whoami:
     image: traefik/whoami:latest
@@ -54,7 +53,7 @@ services:
     depends_on:
       - traefik
     networks:
-      - dev
+      - traefik
     command:
       - --port=8181
     labels:
@@ -86,7 +85,7 @@ services:
       - traefik.http.routers.jenkins.tls.certresolver=letsencrypt
       - traefik.http.services.jenkins.loadbalancer.server.port=8080
     networks:
-      - dev
+      - traefik
 
   gitea-db:
     image: postgres:14
@@ -146,7 +145,7 @@ services:
     depends_on:
       - gitea-db
     networks:
-      - dev
+      - traefik
       - gitea-db
 
   portainer:
@@ -164,7 +163,7 @@ services:
       - traefik.http.routers.portainer.tls.certresolver=letsencrypt
       - traefik.http.services.portainer.loadbalancer.server.port=9000
     networks:
-      - dev
+      - traefik
   
   sonarqube:
     image: sonarqube:lts-community
@@ -192,7 +191,7 @@ services:
     depends_on:
     - sonarqube-db
     networks:
-      - dev
+      - traefik
       - sonarqube-db
   
   sonarqube-db:
@@ -238,7 +237,7 @@ services:
       - --web.enable-lifecycle
       - storage.tsdb.retention.time=15d
     networks:
-      - dev
+      - traefik
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -251,7 +250,7 @@ services:
     expose:
       - 9100
     networks:
-      - dev
+      - traefik
  
   prometheus:
     image: prom/prometheus
@@ -270,7 +269,7 @@ services:
     expose:
       - 9090
     networks:
-      - dev
+      - traefik
 
 volumes:
   gitea-db:
@@ -279,7 +278,6 @@ volumes:
   sonarqube_logs:
 
 networks:
-  dev:
   traefik:
     name: "traefik"
   gitea-db:
